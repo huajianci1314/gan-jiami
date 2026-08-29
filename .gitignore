@@ -1,0 +1,11 @@
+# 运行时生成
+ekeycache.json
+
+# 个人工作区
+.workbuddy/
+
+# 依赖与系统文件
+node_modules/
+*.log
+.DS_Store
+Thumbs.db

@@ -1,0 +1,16 @@
+{
+  "name": "gan-jiami",
+  "version": "1.0.0",
+  "description": "本地音乐加密音频解码工具（支持 .ncm 网易云 / .mflac QQ音乐 musicex）",
+  "license": "MIT",
+  "private": true,
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "decrypt": "node cli.js",
+    "test": "node tests/selftest.js"
+  },
+  "engines": {
+    "node": ">=16"
+  }
+}

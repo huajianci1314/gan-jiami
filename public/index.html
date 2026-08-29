@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>淦!加密 · 本地音乐解锁</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <!-- 液态玻璃背景：漂移色块 + 旋转极光 + 粒子流 + 噪点 -->
+  <div class="bg" aria-hidden="true">
+    <div class="blobs" id="blobs">
+      <div class="blob b1"></div>
+      <div class="blob b2"></div>
+      <div class="blob b3"></div>
+      <div class="blob b4"></div>
+      <div class="aurora"></div>
+    </div>
+    <canvas id="fx"></canvas>
+    <!-- 常驻声波层：闲置合成波纹 / 播放真实频谱 -->
+    <canvas id="wave"></canvas>
+    <div class="grain"></div>
+  </div>
+
+  <main class="stage">
+    <header class="head glass reveal d0">
+      <div class="logo">
+        <span class="dot"></span>
+        <span class="orbit"><i></i></span>
+        <span class="halo"></span>
+      </div>
+      <div class="head-txt">
+        <h1>淦!加密</h1>
+        <p class="sub">本地加密音频解锁 · 端到端在本机完成</p>
+      </div>
+      <span class="live"><i></i>运行中</span>
+    </header>
+
+    <!-- 导入区：边框流光持续巡游 -->
+    <section class="dropzone glass reveal d1" id="dropzone">
+      <span class="ring" aria-hidden="true"></span>
+      <i class="hud c1" aria-hidden="true"></i><i class="hud c2" aria-hidden="true"></i>
+      <i class="hud c3" aria-hidden="true"></i><i class="hud c4" aria-hidden="true"></i>
+      <input type="file" id="fileInput" accept=".ncm,.kwm,.kgg,.kgma,.kgm,.mflac,.mflac0,.mgg,.mgg0,.mgg1,.mggl,.mmp4,.qmc0,.qmc2,.qmc3,.qmc4,.qmc6,.qmc8,.qmcflac,.qmcogg,.tkm,.bkcmp3,.bkcm4a,.bkcflac,.bkcwav,.bkcape,.bkcogg,.bkcwma,.666c6163,.6d7033,.6f6767,.6d3461,.776176" multiple hidden>
+      <div class="drop-inner">
+        <div class="icon-ring">
+          <svg viewBox="0 0 24 24" width="34" height="34" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 16V4M7 9l5-5 5 5"/>
+            <path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/>
+          </svg>
+        </div>
+        <h2 id="dzTitle">拖入加密音频（可多选），或点击这里导入</h2>
+        <p class="dz-sub">批量解密 · <b class="t-ncm">.ncm</b> 网易云 · <b class="t-qmc">.mflac / .qmc* / .kwm</b> 腾讯酷我 · <b class="t-kgg">.kgg / .kgma</b> 酷狗音乐 · 可拖入整个文件夹</p>
+        <button class="btn glass-strong" type="button" id="pickBtn">选择文件（可多选）</button>
+      </div>
+    </section>
+
+    <!-- 批量解密队列：逐首串行处理 -->
+    <section class="panel glass queue" id="queuePanel" hidden>
+      <div class="q-head">
+        <span class="q-title"><i class="q-dot"></i>解密队列</span>
+        <span class="q-count" id="qCount"></span>
+        <button class="q-zip" type="button" id="zipBtn" hidden>打包下载</button>
+        <button class="q-clear" type="button" id="clearBtn" hidden>清除已完成</button>
+      </div>
+      <div class="q-list" id="queueList"></div>
+    </section>
+
+    <!-- 结果 -->
+    <section class="panel glass result" id="resultPanel" hidden>
+      <div class="result-head">
+        <div class="album" id="album"></div>
+        <div class="result-txt">
+          <h3 id="resName">歌曲</h3>
+          <p class="res-meta" id="resMeta"></p>
+          <p class="badges"><span class="badge" id="badgeFmt"></span><span class="badge" id="badgeMode" hidden></span></p>
+        </div>
+        <span class="eq" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>
+      </div>
+      <div class="actions">
+        <button class="btn primary" type="button" id="playBtn">▶ 播放</button>
+        <button class="btn glass-strong" type="button" id="dlBtn">下载文件</button>
+        <button class="btn ghost" type="button" id="againBtn">再解密一首</button>
+      </div>
+      <!-- 自定义玻璃播放器条 -->
+      <div class="player" id="playerBar" hidden>
+        <button class="pbtn" type="button" id="ppBtn" aria-label="播放或暂停">
+          <svg class="ic-play" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13a1 1 0 0 0 1.54.84l9.6-6.5a1 1 0 0 0 0-1.68l-9.6-6.5A1 1 0 0 0 8 5.5z"/></svg>
+          <svg class="ic-pause" viewBox="0 0 24 24" fill="currentColor"><rect x="6.2" y="4.6" width="4.1" height="14.8" rx="1.3"/><rect x="13.7" y="4.6" width="4.1" height="14.8" rx="1.3"/></svg>
+        </button>
+        <div class="p-body">
+          <div class="p-track" id="pTrack" role="slider" aria-label="播放进度" tabindex="0"
+               aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+            <div class="p-fill"></div>
+            <div class="p-thumb"></div>
+          </div>
+          <span class="p-times" id="tCur">0:00</span>
+          <span class="p-times" id="tDur">--:--</span>
+        </div>
+      </div>
+      <audio id="player" hidden></audio>
+    </section>
+
+    <footer class="foot reveal d2">
+      <p>所有解密处理均在你本地完成，文件不会离开这台设备。</p>
+    </footer>
+  </main>
+
+  <script src="/app.js"></script>
+</body>
+</html>
