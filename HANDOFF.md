@@ -59,6 +59,20 @@
 - 遗留调研脚本与旧测试移入 `_archive/`（含说明文档），未删除，保持可逆。
 - `npm test` 由废弃的 `test/qmc_test.js` 改指 `tests/selftest.js`。
 
+### 启动方式
+
+- `start.bat` 重写为自包含批处理，不再转调 `start.ps1`，旧文件备份在 `_archive/start.bat.old`。原实现依赖 `npm` 命令与 PowerShell 执行策略放行，且新开的 cmd 窗口与项目路径含中文时容易失败。
+- 链路：切到脚本所在目录 → 依次在 PATH、`%ProgramFiles%\nodejs`、`%LOCALAPPDATA%\Program Files\nodejs`、`%ProgramFiles(x86)%\nodejs`、`%USERPROFILE%\.workbuddy\binaries\node\versions\*` 定位 node.exe → 从 8787 起找未被监听的端口（上限 8796）→ 前台运行 `node server.js`，关窗即停。
+- 文件存为 UTF-8 无 BOM + CRLF，首行 `chcp 65001`，让批处理自身中文与 node 的中文日志同时正常显示。改完内容后需重新确认这两点。
+- 两个批处理坑：项目路径含中文与全角字符，全程禁用延迟变量扩展；括号块内 `set` 的值在块内读不到，`choice` 的返回码必须移到括号外判断。
+- 参数 `/nobrowser` 跳过自动打开浏览器。浏览器由后台 PowerShell 延迟 3 秒打开，避免抢在服务监听之前。
+
+### ekey 取钥工具
+
+- 新增 `ekey.js`（`npm run ekey`），用于网页端自动取钥失败时单独取钥匙与诊断凭证。四种用法：给文件直接取钥匙、`--out` 取到后顺手解密、`--probe` 只看页脚、`--cred` 只看凭证来源与健康度。支持 `--json`。
+- 尾包为 QTag / PcV1Legacy 时直接打印内嵌钥匙，不联网；MusicEx 用页脚的 mediaMid 与 filename 调 GetEVkey；STag 只有数字歌曲 id，提示手动补 songmid 与 filename。
+- 内置凭证健康检测：authst 含控制字符、引号、问号或长度不足 16 时判为异常并给出处置建议，避免拿着脏凭证去请求接口却只得到空结果。
+
 ### 测试覆盖
 
 用例从 8 个扩到 12 个，新增：RC4 段密钥边界、EncV2 双阶段取钥、ncm 密钥盒与封面提取、KGMA 流式跨块一致性。
@@ -68,6 +82,8 @@
 1. 真实文件回归。selftest 全是合成样本，真实 `.mflac`(QTag) 与 `.kwm` 的端到端回归仍缺，需要真文件才能补。
 2. 解密成功但格式识别为 bin 时，产物 `out_xxx.bin` 会残留到 TTL 到期才回收，可在抛错前主动删除。
 3. `ekeycred.ps1` 与 `native/QKeyCred.cs` 靠扫描 QQ 音乐进程内存取凭证，在部分环境可能被安全软件拦截，届时需改为读本地凭据文件或引导用户手动粘贴。
+4. `start.ps1` 仍依赖 `npm` 命令且需执行策略放行，与新的 `start.bat` 行为不一致。用户 2026-09-08 明确表示暂不改动，保持原样；`start.bat` 已不再依赖它。
+5. 本机扫出的 authst 含 `?` 与控制字符（`ekey.js --cred` 实测来源 native/ps1，长度 160，且会回写进 `ekeycache.json`，ts 同步刷新，说明是扫描器当下产出而非陈旧缓存）。`ekeycred.ps1` 的 Find 从 `"authst":"` 一路读到下一个 `"`，上限 600 字符，跨越到相邻内存就会带出脏字符。可考虑在 `ekey_fetch.js` 里加清洗与告警，改动前需先确认脏串截断后是否仍被服务端接受。
 
 ## 已排除的路线
 

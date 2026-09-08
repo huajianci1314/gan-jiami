@@ -8,6 +8,7 @@
   "scripts": {
     "start": "node server.js",
     "decrypt": "node cli.js",
+    "ekey": "node ekey.js",
     "test": "node tests/selftest.js"
   },
   "engines": {

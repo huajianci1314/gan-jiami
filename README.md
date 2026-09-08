@@ -55,11 +55,28 @@ node cli.js <输入文件> [输出文件] [--ekey <QQ音乐ekey>]
 
 `--ekey` 用于新版 QQ 音乐加密文件，省略时工具会尝试从本机客户端读取。
 
+## ekey 取钥工具
+
+网页端自动取钥失败时，用 `ekey.js` 单独取钥匙，便于判断是凭证失效、音质档位不符，还是文件本身没带定位信息。
+
+```bash
+node ekey.js <文件.mflac>                              读页脚自动定位曲目并取 ekey
+node ekey.js <文件> --out <产物>                         取到钥匙后顺手解密
+node ekey.js --songmid <mid> --filename <名>             手填参数取钥匙（STag 文件用这个）
+node ekey.js --probe <文件>                              只看页脚信息，不联网
+node ekey.js --cred                                      只看凭证来源与健康度
+```
+
+加 `--json` 可得到机器可读输出。凭证优先取环境变量 `QQ_MUSIC_AUTHST` 与 `QQ_MUSIC_UIN`，其次扫本机客户端内存，最后读 `ekeycache.json`。
+
+文件尾包为 QTag 或 PcV1Legacy 时钥匙已内嵌，工具会直接打印而不联网；尾包为 STag 时页脚只有数字歌曲 id，需要自己提供 songmid 与服务端文件名。
+
 ## 项目结构
 
 ```text
 ├── server.js                 网页服务入口，解密调度与静态文件
 ├── cli.js                    命令行入口，仅 ncm 与传统 mflac
+├── ekey.js                   ekey 取钥与凭证诊断小工具
 ├── start.bat                 Windows 一键启动脚本
 ├── package.json              零依赖声明，Node >= 16
 ├── ekeycache.json            ekey 本地缓存（运行时生成）
