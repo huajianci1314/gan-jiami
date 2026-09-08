@@ -30,6 +30,8 @@
 
 `node tests/selftest.js` 12 个用例全过。HTTP 端到端冒烟 11 项全过（解密、下载、封面、打包、413、404、垃圾输入）。
 
+代码托管在 https://github.com/huajianci1314/gan-jiami.git，分支 main。2026-09-08 的提交 64d7e8d（启动脚本重写与 ekey 取钥工具）已推送上线。`ekeycache.json` 已被 .gitignore 忽略，任何情况下都不要把真实 authst 提交进仓库。
+
 ## 已完成的改动
 
 ### 算法正确性
